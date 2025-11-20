@@ -1,0 +1,117 @@
+# Binaries and executables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+bin/
+dist/
+
+# Go workspace file
+go.work
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.txt
+coverage.html
+
+# Dependency directories
+vendor/
+
+# Go build cache
+.cache/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+
+# OS specific files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+secrets/
+.secrets/
+
+# Configuration overrides (keep example, ignore local)
+config.local.yaml
+config.override.yaml
+*.local.yaml
+
+# Logs
+*.log
+logs/
+log/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker volumes (if running docker-compose)
+# Note: docker-compose.yml is tracked, but volumes are not
+.docker/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build artifacts
+build/
+release/
+
+# Documentation generated files
+docs/_build/
+site/
+
+# macOS
+.AppleDouble
+.LSOverride
+Icon
+
+# Windows
+ehthumbs.db
+ehthumbs_vista.db
+
+# Node.js (if you add any JS tooling later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (if you add any Python scripts)
+__pycache__/
+*.py[cod]*$py.class
+.Python
+*.egg-info/
+venv/
+.venv/
+
+# Internal/temporary documentation
+GITHUB_PUSH_CHECKLIST.md
+QUICK_TEST.md
+
+# Keep these files
+!.gitignore
+!README.md
+!LICENSE
+!go.mod
+!go.sum

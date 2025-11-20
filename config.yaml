@@ -1,0 +1,100 @@
+# Database configuration
+database:
+  host: localhost
+  port: 3306
+  type: mysql  # mysql or postgresql
+  user: root
+  password: secret
+  database: ecommerce_db
+  max_connections: 100
+  idle_connections: 10
+  connection_timeout: 30s
+
+# Proxy configuration
+proxy:
+  host: 0.0.0.0
+  port: 3307
+  pool_size: 100
+  max_connections_per_host: 50
+  read_timeout: 30s
+  write_timeout: 30s
+
+# Redis configuration (for config store)
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  database: 0
+  pool_size: 10
+
+# API Server configuration
+api:
+  host: 0.0.0.0
+  port: 8080
+  api_key: "sk_dev_changeme"
+
+# Currency conversion configuration
+conversion:
+  ratio: 1000  # IDR to IDN conversion ratio
+  precision: 4
+  rounding_strategy: "BANKERS_ROUND"  # BANKERS_ROUND or ARITHMETIC_ROUND
+
+# Backfill worker configuration
+backfill:
+  enabled: true
+  batch_size: 1000
+  sleep_interval_ms: 100
+  max_cpu_percent: 20
+  retry_attempts: 3
+  retry_backoff_ms: 500
+
+# Simulation mode configuration
+simulation:
+  enabled: true
+  allowed_ips:
+    - "127.0.0.1"
+    - "10.0.0.0/8"
+    - "192.168.0.0/16"
+
+# Monitoring configuration
+monitoring:
+  prometheus_enabled: true
+  prometheus_port: 9090
+  metrics_path: "/metrics"
+  
+# Logging configuration
+logging:
+  level: "info"  # debug, info, warn, error
+  format: "json"  # json or text
+  output: "stdout"  # stdout or file path
+
+# Table configuration (can also be loaded from Redis)
+tables:
+  orders:
+    enabled: true
+    columns:
+      total_amount:
+        source_column: "total_amount"
+        target_column: "total_amount_idn"
+        source_type: "BIGINT"
+        target_type: "DECIMAL(19,4)"
+        rounding_strategy: "BANKERS_ROUND"
+        precision: 4
+      shipping_fee:
+        source_column: "shipping_fee"
+        target_column: "shipping_fee_idn"
+        source_type: "INT"
+        target_type: "DECIMAL(12,4)"
+        rounding_strategy: "BANKERS_ROUND"
+        precision: 4
+  
+  invoices:
+    enabled: true
+    columns:
+      grand_total:
+        source_column: "grand_total"
+        target_column: "grand_total_idn"
+        source_type: "BIGINT"
+        target_type: "DECIMAL(19,4)"
+        rounding_strategy: "BANKERS_ROUND"
+        precision: 4

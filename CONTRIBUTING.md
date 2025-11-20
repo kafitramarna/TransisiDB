@@ -46,8 +46,8 @@ While this is primarily a portfolio project, quality contributions are appreciat
 
 ```bash
 # Clone your fork
-git clone https://github.com/yourusername/transisidb
-cd transisidb
+git clone https://github.com/kafitramarna/TransisiDB.git
+cd TransisiDB
 
 # Install dependencies
 go mod download

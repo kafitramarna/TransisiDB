@@ -71,9 +71,6 @@ curl http://localhost:8080/health
 | `SRS_TransisiDB.md` | System requirements specification |
 | `README.md` | Project overview & setup |
 | `docs/API.md` | REST API documentation |
-| `walkthrough.md` | Implementation details (Phases 1-4) |
-| `implementation_plan.md` | Development roadmap |
-
 ---
 
 ## ✅ What's Working
@@ -95,6 +92,7 @@ curl http://localhost:8080/health
 - Transaction atomicity guarantee
 - Comprehensive test coverage
 - Financial compliance (IEEE 754, ISO 4217)
+- **Full Observability** (Prometheus Metrics)
 
 ### Portfolio Value
 - Solves real-world problem (Indonesia 2027 redenomination)
@@ -108,7 +106,7 @@ curl http://localhost:8080/health
 
 ### For Production Deployment:
 1. Implement full TCP proxy (MySQL/PostgreSQL wire protocol)
-2. Add Prometheus metrics & Grafana dashboards
+2. Create Grafana dashboards (Metrics already exported)
 3. Load testing (target: 10K TPS)
 4. Integration testing dengan real workload
 
@@ -117,6 +115,7 @@ curl http://localhost:8080/health
 - ✅ All core features demonstrated
 - ✅ Documentation complete
 - ✅ Tests comprehensive
+- ✅ Monitoring implemented
 
 ---
 

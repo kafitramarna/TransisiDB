@@ -26,8 +26,8 @@ TransisiDB adalah middleware database proxy yang dirancang untuk menangani migra
 
 ```bash
 # Clone repository
-git clone https://github.com/transisidb/transisidb.git
-cd transisidb
+git clone https://github.com/kafitramarna/TransisiDB.git
+cd TransisiDB
 
 # Install dependencies
 go mod download
@@ -85,16 +85,19 @@ transisidb/
 │   ├── backfill/       # Backfill worker
 │   └── api/            # Management API
 ├── internal/
-│   ├── proxy/          # Core proxy logic
-│   ├── parser/         # SQL parser
+│   ├── api/            # API server implementation
+│   ├── backfill/       # Backfill worker logic
+│   ├── config/         # Configuration management
+│   ├── database/       # Database connection pool
 │   ├── dualwrite/      # Dual-write orchestrator
+│   ├── metrics/        # Prometheus metrics collectors
+│   ├── parser/         # SQL parser
 │   ├── rounding/       # Banker's rounding engine
-│   └── config/         # Configuration management
-├── pkg/
-│   └── protocol/       # MySQL/PostgreSQL protocol
+│   └── simulation/     # Time travel simulation
+├── scripts/            # Utility scripts (init, cleanup)
+├── prometheus/         # Prometheus configuration
 ├── configs/            # Configuration files
-├── docs/               # Documentation
-└── tests/              # Integration tests
+└── docs/               # Documentation
 ```
 
 ### Running Tests
@@ -113,9 +116,9 @@ docker-compose up -d
 
 - [x] Project Setup
 - [ ] Core Proxy Engine (Week 3-6)
-- [ ] Backfill Worker (Week 7-8)
-- [ ] Time Travel Feature (Week 9-10)
-- [ ] Monitoring & Testing (Week 11-12)
+- [x] Backfill Worker (Week 7-8)
+- [x] Time Travel Feature (Week 9-10)
+- [x] Monitoring & Testing (Week 11-12)
 
 Lihat [Roadmap lengkap](./SRS_TransisiDB.md#8-roadmap-pengembangan) untuk detail.
 
@@ -130,13 +133,13 @@ MIT License - see [LICENSE](./LICENSE) for details.
 ## Dokumentasi
 
 - [System Requirements Specification](./SRS_TransisiDB.md)
-- [API Documentation](./docs/API.md) (Coming soon)
+- [API Documentation](./docs/API.md)
 - [Deployment Guide](./docs/DEPLOYMENT.md) (Coming soon)
 
 ## Contact
 
-- GitHub: [@transisidb](https://github.com/transisidb)
-- Email: support@transisidb.dev
+- GitHub: [@kafitramarna](https://github.com/kafitramarna)
+- Email: kafitra.marna@gmail.com
 
 ---
 

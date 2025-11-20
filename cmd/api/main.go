@@ -24,6 +24,9 @@ func main() {
 	// Load configuration
 	cfg, err := config.Load(*configPath)
 	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
 	// Initialize logger
 	logger.Init("INFO")
 	logger.Info("TransisiDB Management API starting", "version", "dev")
@@ -31,7 +34,6 @@ func main() {
 
 	// Initialize Redis store
 	redisStore, err := config.NewRedisStore(&cfg.Redis)
-	if err != nil {
 	if err != nil {
 		logger.Warn("Redis connection failed", "error", err)
 		logger.Info("API will start but config operations will be limited")
@@ -55,7 +57,6 @@ func main() {
 	// Create API server (without backfill worker for now)
 	server := api.NewServer(&cfg.API, redisStore, nil)
 
-	// Start server in goroutine
 	// Start server in goroutine
 	go func() {
 		logger.Info("Starting API server", "host", cfg.API.Host, "port", cfg.API.Port)

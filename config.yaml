@@ -1,7 +1,7 @@
 # Database configuration
 database:
   host: localhost
-  port: 3306
+  port: 3307
   type: mysql  # mysql or postgresql
   user: root
   password: secret
@@ -13,7 +13,7 @@ database:
 # Proxy configuration
 proxy:
   host: 0.0.0.0
-  port: 3307
+  port: 3308
   pool_size: 100
   max_connections_per_host: 50
   read_timeout: 30s
@@ -64,7 +64,7 @@ monitoring:
   
 # Logging configuration
 logging:
-  level: "info"  # debug, info, warn, error
+  level: "DEBUG"  # debug, info, warn, error
   format: "json"  # json or text
   output: "stdout"  # stdout or file path
 

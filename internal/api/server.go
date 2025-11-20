@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/transisidb/transisidb/internal/backfill"
 	"github.com/transisidb/transisidb/internal/config"
+	"github.com/transisidb/transisidb/internal/metrics"
 )
 
 // Server represents the management API server
@@ -41,12 +43,16 @@ func NewServer(cfg *config.APIConfig, configStore *config.RedisStore, worker *ba
 
 // setupRoutes configures all API routes
 func (s *Server) setupRoutes() {
+	// Prometheus metrics endpoint (public - no auth for scraping)
+	s.router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
 	// Health check (public)
 	s.router.GET("/health", s.handleHealth)
 
 	// API v1 routes (protected)
 	v1 := s.router.Group("/api/v1")
 	v1.Use(s.authMiddleware())
+	v1.Use(s.metricsMiddleware()) // Track API metrics
 	{
 		// Configuration endpoints
 		v1.GET("/config", s.handleGetConfig)
@@ -95,6 +101,22 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 		}
 
 		c.Next()
+	}
+}
+
+// metricsMiddleware tracks API request metrics
+func (s *Server) metricsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+
+		// Process request
+		c.Next()
+
+		// Record metrics
+		duration := time.Since(start).Seconds()
+		status := fmt.Sprintf("%d", c.Writer.Status())
+		metrics.RecordAPIRequest(c.FullPath(), c.Request.Method, status)
+		metrics.RecordQueryDuration("api_request", duration)
 	}
 }
 

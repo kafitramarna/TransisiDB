@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/transisidb/transisidb/internal/config"
+	"github.com/transisidb/transisidb/internal/metrics"
 	"github.com/transisidb/transisidb/internal/rounding"
 )
 
@@ -82,6 +83,8 @@ func (w *Worker) Start(ctx context.Context, tableName string, tableConfig config
 			processed, err := w.processBatch(ctx, tableName, tableConfig)
 			if err != nil {
 				w.progress.IncrementErrors()
+				metrics.RecordBackfillError(tableName)
+				metrics.RecordError("backfill")
 
 				// Retry logic
 				if w.shouldRetry() {
@@ -94,10 +97,18 @@ func (w *Worker) Start(ctx context.Context, tableName string, tableConfig config
 			if processed == 0 {
 				// No more rows to process
 				w.progress.Complete()
+				metrics.SetBackfillProgress(tableName, 100.0)
 				return nil
 			}
 
 			w.progress.IncrementCompleted(int64(processed))
+
+			// Update metrics
+			for i := 0; i < processed; i++ {
+				metrics.RecordBackfillRow(tableName)
+			}
+			snapshot := w.progress.GetSnapshot()
+			metrics.SetBackfillProgress(tableName, snapshot.ProgressPercentage)
 
 			// Throttle to avoid overloading database
 			time.Sleep(time.Duration(w.config.SleepIntervalMs) * time.Millisecond)

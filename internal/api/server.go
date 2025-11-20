@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/kafitramarna/TransisiDB/internal/backfill"
+	"github.com/kafitramarna/TransisiDB/internal/config"
+	"github.com/kafitramarna/TransisiDB/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/transisidb/transisidb/internal/backfill"
-	"github.com/transisidb/transisidb/internal/config"
-	"github.com/transisidb/transisidb/internal/metrics"
 )
 
 // Server represents the management API server

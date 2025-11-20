@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/transisidb/transisidb/internal/config"
+	"github.com/kafitramarna/TransisiDB/internal/config"
 	"github.com/xwb1989/sqlparser"
 )
 

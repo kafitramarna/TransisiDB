@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/transisidb/transisidb/internal/config"
-	"github.com/transisidb/transisidb/internal/parser"
-	"github.com/transisidb/transisidb/internal/rounding"
+	"github.com/kafitramarna/TransisiDB/internal/config"
+	"github.com/kafitramarna/TransisiDB/internal/parser"
+	"github.com/kafitramarna/TransisiDB/internal/rounding"
 )
 
 // Orchestrator manages dual-write operations

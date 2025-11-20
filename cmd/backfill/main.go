@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/transisidb/transisidb/internal/backfill"
-	"github.com/transisidb/transisidb/internal/config"
-	"github.com/transisidb/transisidb/internal/database"
+	"github.com/kafitramarna/TransisiDB/internal/backfill"
+	"github.com/kafitramarna/TransisiDB/internal/config"
+	"github.com/kafitramarna/TransisiDB/internal/database"
 )
 
 var (

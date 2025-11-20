@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/transisidb/transisidb/internal/config"
-	"github.com/transisidb/transisidb/internal/rounding"
+	"github.com/kafitramarna/TransisiDB/internal/config"
+	"github.com/kafitramarna/TransisiDB/internal/rounding"
 )
 
 // Simulator handles simulation mode for testing

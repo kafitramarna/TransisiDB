@@ -3,9 +3,9 @@ package parser
 import (
 	"testing"
 
+	"github.com/kafitramarna/TransisiDB/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/transisidb/transisidb/internal/config"
 )
 
 func getTestConfig() config.TablesConfig {

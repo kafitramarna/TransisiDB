@@ -7,7 +7,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/transisidb/transisidb/internal/config"
+	"github.com/kafitramarna/TransisiDB/internal/config"
 )
 
 // Pool manages database connections

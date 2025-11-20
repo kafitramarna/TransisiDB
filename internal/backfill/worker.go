@@ -7,9 +7,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/transisidb/transisidb/internal/config"
-	"github.com/transisidb/transisidb/internal/metrics"
-	"github.com/transisidb/transisidb/internal/rounding"
+	"github.com/kafitramarna/TransisiDB/internal/config"
+	"github.com/kafitramarna/TransisiDB/internal/metrics"
+	"github.com/kafitramarna/TransisiDB/internal/rounding"
 )
 
 // Worker handles background data migration

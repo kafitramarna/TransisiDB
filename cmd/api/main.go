@@ -11,6 +11,7 @@ import (
 
 	"github.com/kafitramarna/TransisiDB/internal/api"
 	"github.com/kafitramarna/TransisiDB/internal/config"
+	"github.com/kafitramarna/TransisiDB/internal/logger"
 )
 
 var (
@@ -23,31 +24,31 @@ func main() {
 	// Load configuration
 	cfg, err := config.Load(*configPath)
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
-	}
-
-	log.Println("TransisiDB Management API")
-	log.Printf("Configuration loaded from: %s", *configPath)
+	// Initialize logger
+	logger.Init("INFO")
+	logger.Info("TransisiDB Management API starting", "version", "dev")
+	logger.Info("Configuration loaded", "path", *configPath)
 
 	// Initialize Redis store
 	redisStore, err := config.NewRedisStore(&cfg.Redis)
 	if err != nil {
-		log.Printf("Warning: Redis connection failed: %v", err)
-		log.Println("API will start but config operations will be limited")
+	if err != nil {
+		logger.Warn("Redis connection failed", "error", err)
+		logger.Info("API will start but config operations will be limited")
 	} else {
-		log.Println("Redis connection established")
+		logger.Info("Redis connection established")
 
 		// Save current config to Redis if needed
 		ctx := context.Background()
 		if err := redisStore.SaveConfig(ctx, cfg); err != nil {
-			log.Printf("Warning: Failed to save config to Redis: %v", err)
+			logger.Warn("Failed to save config to Redis", "error", err)
 		}
 
 		// Sync table configurations from config.yaml to Redis
 		if err := redisStore.SyncTablesFromConfig(ctx, cfg); err != nil {
-			log.Printf("Warning: Failed to sync tables to Redis: %v", err)
+			logger.Warn("Failed to sync tables to Redis", "error", err)
 		} else {
-			log.Println("Table configurations synced to Redis successfully")
+			logger.Info("Table configurations synced to Redis successfully")
 		}
 	}
 
@@ -55,10 +56,12 @@ func main() {
 	server := api.NewServer(&cfg.API, redisStore, nil)
 
 	// Start server in goroutine
+	// Start server in goroutine
 	go func() {
-		log.Printf("Starting API server on %s:%d", cfg.API.Host, cfg.API.Port)
+		logger.Info("Starting API server", "host", cfg.API.Host, "port", cfg.API.Port)
 		if err := server.Start(); err != nil {
-			log.Fatalf("API server error: %v", err)
+			logger.Error("API server error", "error", err)
+			os.Exit(1)
 		}
 	}()
 
@@ -74,14 +77,14 @@ func main() {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Printf("Error during shutdown: %v", err)
+		logger.Error("Error during shutdown", "error", err)
 	}
 
 	if redisStore != nil {
 		if err := redisStore.Close(); err != nil {
-			log.Printf("Error closing Redis: %v", err)
+			logger.Error("Error closing Redis", "error", err)
 		}
 	}
 
-	log.Println("Server stopped cleanly")
+	logger.Info("Server stopped cleanly")
 }

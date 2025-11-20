@@ -1,0 +1,42 @@
+groups:
+  - name: transisidb_alerts
+    rules:
+      # High Error Rate Alert
+      - alert: HighErrorRate
+        expr: sum(rate(transisidb_errors_total[5m])) > 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "TransisiDB is experiencing a high rate of errors (> 1 error/sec) over the last 5 minutes."
+
+      # High API Latency Alert
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, sum(rate(transisidb_query_duration_seconds_bucket{operation="api_request"}[5m])) by (le)) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency"
+          description: "95th percentile of API request latency is above 500ms for more than 2 minutes."
+
+      # Backfill Stalled Alert
+      - alert: BackfillStalled
+        expr: rate(transisidb_backfill_progress[10m]) == 0 and transisidb_backfill_progress < 100
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backfill stalled"
+          description: "Backfill progress has not changed for 15 minutes while incomplete."
+
+      # Database Connection Pool Exhaustion
+      - alert: DBConnectionPoolExhausted
+        expr: transisidb_connection_pool_active > 80
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DB connection pool near capacity"
+          description: "Active database connections exceed 80 (80% of pool size)."

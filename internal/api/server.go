@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kafitramarna/TransisiDB/internal/backfill"
 	"github.com/kafitramarna/TransisiDB/internal/config"
+	"github.com/kafitramarna/TransisiDB/internal/logger"
 	"github.com/kafitramarna/TransisiDB/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -53,6 +54,7 @@ func (s *Server) setupRoutes() {
 	v1 := s.router.Group("/api/v1")
 	v1.Use(s.authMiddleware())
 	v1.Use(s.metricsMiddleware()) // Track API metrics
+	v1.Use(s.loggingMiddleware()) // Log API requests
 	{
 		// Configuration endpoints
 		v1.GET("/config", s.handleGetConfig)
@@ -117,6 +119,46 @@ func (s *Server) metricsMiddleware() gin.HandlerFunc {
 		status := fmt.Sprintf("%d", c.Writer.Status())
 		metrics.RecordAPIRequest(c.FullPath(), c.Request.Method, status)
 		metrics.RecordQueryDuration("api_request", duration)
+	}
+}
+
+// loggingMiddleware logs API requests
+func (s *Server) loggingMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		path := c.Request.URL.Path
+		raw := c.Request.URL.RawQuery
+
+		// Process request
+		c.Next()
+
+		// Log request details
+		duration := time.Since(start)
+		status := c.Writer.Status()
+		clientIP := c.ClientIP()
+		method := c.Request.Method
+
+		if raw != "" {
+			path = path + "?" + raw
+		}
+
+		msg := "API Request"
+		fields := []any{
+			"status", status,
+			"method", method,
+			"path", path,
+			"ip", clientIP,
+			"latency", duration,
+			"user_agent", c.Request.UserAgent(),
+		}
+
+		if status >= 500 {
+			logger.Error(msg, fields...)
+		} else if status >= 400 {
+			logger.Warn(msg, fields...)
+		} else {
+			logger.Info(msg, fields...)
+		}
 	}
 }
 
@@ -380,7 +422,7 @@ func (s *Server) Start() error {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	fmt.Printf("API server listening on %s\n", addr)
+	logger.Info("API server listening", "address", addr)
 	return s.httpServer.ListenAndServe()
 }
 

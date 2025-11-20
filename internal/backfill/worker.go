@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kafitramarna/TransisiDB/internal/config"
+	"github.com/kafitramarna/TransisiDB/internal/logger"
 	"github.com/kafitramarna/TransisiDB/internal/metrics"
 	"github.com/kafitramarna/TransisiDB/internal/rounding"
 )
@@ -54,6 +55,7 @@ func (w *Worker) Start(ctx context.Context, tableName string, tableConfig config
 	}
 	defer w.running.Store(false)
 
+	logger.Info("Starting backfill job", "table", tableName)
 	w.progress.Start(tableName)
 
 	// Count total rows to migrate
@@ -64,9 +66,12 @@ func (w *Worker) Start(ctx context.Context, tableName string, tableConfig config
 	w.progress.SetTotal(totalRows)
 
 	if totalRows == 0 {
+		logger.Info("No rows to backfill", "table", tableName)
 		w.progress.Complete()
 		return nil
 	}
+
+	logger.Info("Backfill started", "table", tableName, "total_rows", totalRows)
 
 	// Process in batches
 	for {
@@ -85,6 +90,7 @@ func (w *Worker) Start(ctx context.Context, tableName string, tableConfig config
 				w.progress.IncrementErrors()
 				metrics.RecordBackfillError(tableName)
 				metrics.RecordError("backfill")
+				logger.Error("Batch processing failed", "table", tableName, "error", err)
 
 				// Retry logic
 				if w.shouldRetry() {
@@ -98,6 +104,7 @@ func (w *Worker) Start(ctx context.Context, tableName string, tableConfig config
 				// No more rows to process
 				w.progress.Complete()
 				metrics.SetBackfillProgress(tableName, 100.0)
+				logger.Info("Backfill completed successfully", "table", tableName)
 				return nil
 			}
 

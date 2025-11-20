@@ -222,6 +222,24 @@ func (s *RedisStore) DeleteTableConfig(ctx context.Context, tableName string) er
 	return s.client.Del(ctx, key).Err()
 }
 
+// SyncTablesFromConfig syncs all table configurations from Config to Redis
+// This is typically called during startup to populate Redis with tables from config.yaml
+func (s *RedisStore) SyncTablesFromConfig(ctx context.Context, cfg *Config) error {
+	if cfg == nil || cfg.Tables == nil {
+		return fmt.Errorf("invalid config: tables is nil")
+	}
+
+	syncedCount := 0
+	for tableName, tableConfig := range cfg.Tables {
+		if err := s.SaveTableConfig(ctx, tableName, tableConfig); err != nil {
+			return fmt.Errorf("failed to sync table %s: %w", tableName, err)
+		}
+		syncedCount++
+	}
+
+	return nil
+}
+
 // Health checks Redis connection health
 func (s *RedisStore) Health(ctx context.Context) error {
 	return s.client.Ping(ctx).Err()

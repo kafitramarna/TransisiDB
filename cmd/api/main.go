@@ -42,6 +42,13 @@ func main() {
 		if err := redisStore.SaveConfig(ctx, cfg); err != nil {
 			log.Printf("Warning: Failed to save config to Redis: %v", err)
 		}
+
+		// Sync table configurations from config.yaml to Redis
+		if err := redisStore.SyncTablesFromConfig(ctx, cfg); err != nil {
+			log.Printf("Warning: Failed to sync tables to Redis: %v", err)
+		} else {
+			log.Println("Table configurations synced to Redis successfully")
+		}
 	}
 
 	// Create API server (without backfill worker for now)

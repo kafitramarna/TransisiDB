@@ -368,8 +368,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 📞 Support
 
-- 📧 Email: support@transisidb.com
-- 💬 Slack: [Join our community](https://transisidb.slack.com)
+- 📧 Email: kafitra.marna@gmail.com
+<!-- - 💬 Slack: [Join our community](https://transisidb.slack.com) -->
 - 🐛 Issues: [GitHub Issues](https://github.com/kafitramarna/TransisiDB/issues)
 - 📖 Wiki: [GitHub Wiki](https://github.com/kafitramarna/TransisiDB/wiki)
 

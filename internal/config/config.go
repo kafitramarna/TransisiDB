@@ -12,6 +12,8 @@ import (
 type Config struct {
 	Database          DatabaseConfig    `yaml:"database"`
 	Proxy             ProxyConfig       `yaml:"proxy"`
+	TLS               TLSConfig         `yaml:"tls"`     // v2.0: TLS/SSL configuration
+	Replica           ReplicaConfig     `yaml:"replica"` // v2.0: Read replica routing
 	Redis             RedisConfig       `yaml:"redis"`
 	API               APIConfig         `yaml:"api"`
 	Conversion        ConversionConfig  `yaml:"conversion"`
@@ -69,6 +71,38 @@ type DetectionStrategy struct {
 	Method         string `yaml:"method"`          // AUTO, EXPLICIT, FIELD_NAME, VALUE_RANGE
 	ExplicitField  string `yaml:"explicit_field"`  // Field name for explicit detection
 	ThresholdValue int64  `yaml:"threshold_value"` // Value threshold for range detection
+}
+
+// TLSConfig configures TLS/SSL for secure connections (v2.0)
+type TLSConfig struct {
+	Client  TLSEndpointConfig `yaml:"client"`  // TLS for client-facing connections (app → proxy)
+	Backend TLSEndpointConfig `yaml:"backend"` // TLS for backend connections (proxy → MySQL)
+}
+
+// TLSEndpointConfig configures TLS for a specific endpoint
+type TLSEndpointConfig struct {
+	Enabled    bool   `yaml:"enabled"`     // Enable TLS for this endpoint
+	CertFile   string `yaml:"cert_file"`   // Path to certificate file
+	KeyFile    string `yaml:"key_file"`    // Path to private key file
+	CAFile     string `yaml:"ca_file"`     // Path to CA certificate
+	ServerName string `yaml:"server_name"` // Expected server name for verification
+	SkipVerify bool   `yaml:"skip_verify"` // Skip certificate verification (dev only!)
+}
+
+// ReplicaConfig configures read replica routing (v2.0)
+type ReplicaConfig struct {
+	Enabled  bool                    `yaml:"enabled"`  // Enable replica routing
+	Strategy string                  `yaml:"strategy"` // ROUND_ROBIN, RANDOM, LEAST_CONNECTIONS
+	Replicas []ReplicaDatabaseConfig `yaml:"replicas"` // List of replica databases
+}
+
+// ReplicaDatabaseConfig represents a replica database connection
+type ReplicaDatabaseConfig struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	Database string `yaml:"database"`
 }
 
 type BackfillConfig struct {

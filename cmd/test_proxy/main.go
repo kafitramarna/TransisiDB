@@ -14,7 +14,7 @@ func main() {
 	fmt.Println()
 
 	// Connect through proxy (port 3308)
-	proxyDSN := "root:secret@tcp(127.0.0.1:3308)/ecommerce_db?parseTime=true"
+	proxyDSN := "root:secret@tcp(127.0.0.1:3308)/ecommerce_db?parseTime=true&interpolateParams=true"
 	proxyDB, err := sql.Open("mysql", proxyDSN)
 	if err != nil {
 		log.Fatalf("Failed to connect to proxy: %v", err)
@@ -103,16 +103,22 @@ func testBasicConnectivity(db *sql.DB) error {
 
 func testDualWriteInsert(proxyDB, directDB *sql.DB) error {
 	// Clean up test data
-	directDB.Exec("DELETE FROM orders WHERE id >= 1000")
+	fmt.Println("  → Cleaning up test data...")
+	if _, err := directDB.Exec("DELETE FROM orders WHERE id >= 1000"); err != nil {
+		return fmt.Errorf("cleanup failed: %w", err)
+	}
+	fmt.Println("  → Cleanup done")
 
 	// Insert through proxy
 	orderID := 1001
+	customerID := 5001
 	totalAmount := int64(15000000) // IDR
+	shippingFee := 50000           // IDR
 	expectedIDN := 15000.0000      // IDN (15000000 / 1000)
 
 	_, err := proxyDB.Exec(
-		"INSERT INTO orders (id, total_amount) VALUES (?, ?)",
-		orderID, totalAmount,
+		"INSERT INTO orders (id, customer_id, total_amount, shipping_fee) VALUES (?, ?, ?, ?)",
+		orderID, customerID, totalAmount, shippingFee,
 	)
 	if err != nil {
 		return fmt.Errorf("INSERT failed: %w", err)
@@ -122,7 +128,7 @@ func testDualWriteInsert(proxyDB, directDB *sql.DB) error {
 
 	// Verify shadow column was populated
 	var actualIDR int64
-	var actualIDN float64
+	var actualIDN sql.NullFloat64
 	err = directDB.QueryRow(
 		"SELECT total_amount, total_amount_idn FROM orders WHERE id = ?",
 		orderID,
@@ -136,8 +142,12 @@ func testDualWriteInsert(proxyDB, directDB *sql.DB) error {
 	if actualIDR != totalAmount {
 		return fmt.Errorf("IDR mismatch: expected %d, got %d", totalAmount, actualIDR)
 	}
-	if actualIDN != expectedIDN {
-		return fmt.Errorf("IDN mismatch: expected %.4f, got %.4f", expectedIDN, actualIDN)
+	if !actualIDN.Valid || actualIDN.Float64 != expectedIDN {
+		if actualIDN.Valid {
+			return fmt.Errorf("IDN mismatch: expected %.4f, got %.4f", expectedIDN, actualIDN.Float64)
+		} else {
+			return fmt.Errorf("IDN is NULL, transformation may not have occurred")
+		}
 	}
 
 	return nil
@@ -193,8 +203,8 @@ func testTransactions(proxyDB, directDB *sql.DB) error {
 
 	// Insert within transaction
 	_, err = tx.Exec(
-		"INSERT INTO orders (id, total_amount) VALUES (?, ?)",
-		orderID, 10000000,
+		"INSERT INTO orders (id, customer_id, total_amount, shipping_fee) VALUES (?, ?, ?, ?)",
+		orderID, 5002, 10000000, 30000,
 	)
 	if err != nil {
 		return fmt.Errorf("INSERT in transaction failed: %w", err)
@@ -226,8 +236,8 @@ func testTransactions(proxyDB, directDB *sql.DB) error {
 	}
 
 	_, err = tx2.Exec(
-		"INSERT INTO orders (id, total_amount) VALUES (?, ?)",
-		orderID2, 20000000,
+		"INSERT INTO orders (id, customer_id, total_amount, shipping_fee) VALUES (?, ?, ?, ?)",
+		orderID2, 5003, 20000000, 40000,
 	)
 	if err != nil {
 		return fmt.Errorf("INSERT in transaction failed: %w", err)
@@ -270,8 +280,8 @@ func testBankersRounding(proxyDB, directDB *sql.DB) error {
 
 	for _, tc := range testCases {
 		_, err := proxyDB.Exec(
-			"INSERT INTO orders (id, total_amount) VALUES (?, ?)",
-			tc.id, tc.idr,
+			"INSERT INTO orders (id, customer_id, total_amount, shipping_fee) VALUES (?, ?, ?, ?)",
+			tc.id, 5000+tc.id, tc.idr, 10000,
 		)
 		if err != nil {
 			return fmt.Errorf("INSERT failed for id=%d: %w", tc.id, err)

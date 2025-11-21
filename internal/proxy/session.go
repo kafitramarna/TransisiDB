@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"encoding/binary"
 	"fmt"
 	"net"
 	"strings"
@@ -60,10 +61,12 @@ func (s *Session) Handle() error {
 	s.parser = parser.NewParser(s.config.Tables)
 
 	// 2. Proxy Handshake (Backend -> Client)
+	logger.Debug("Reading handshake from backend...")
 	handshakePkt, err := protocol.ReadPacket(s.backendConn.Conn())
 	if err != nil {
 		return fmt.Errorf("failed to read backend handshake: %w", err)
 	}
+	logger.Debug("Handshake received from backend", "length", len(handshakePkt.Payload))
 
 	if err := protocol.WritePacket(s.clientConn, handshakePkt.SequenceID, handshakePkt.Payload); err != nil {
 		return fmt.Errorf("failed to forward handshake to client: %w", err)
@@ -176,6 +179,11 @@ func (s *Session) handleCommands() error {
 				return err
 			}
 
+		case protocol.COM_STMT_PREPARE:
+			if err := s.handlePrepare(cmdPkt); err != nil {
+				return err
+			}
+
 		default:
 			// Forward unknown commands as-is
 			if err := s.forwardCommand(cmdPkt); err != nil {
@@ -253,6 +261,86 @@ func (s *Session) handleQuery(cmdPkt *protocol.Packet) error {
 	return s.forwardCommand(rewrittenPkt)
 }
 
+// handlePrepare processes COM_STMT_PREPARE command
+func (s *Session) handlePrepare(cmdPkt *protocol.Packet) error {
+	// Forward command to backend
+	if err := protocol.WritePacket(s.backendConn.Conn(), cmdPkt.SequenceID, cmdPkt.Payload); err != nil {
+		return fmt.Errorf("failed to forward prepare command: %w", err)
+	}
+
+	// Read OK packet
+	respPkt, err := protocol.ReadPacket(s.backendConn.Conn())
+	if err != nil {
+		return fmt.Errorf("failed to read prepare response: %w", err)
+	}
+
+	// Forward OK packet to client
+	if err := protocol.WritePacket(s.clientConn, respPkt.SequenceID, respPkt.Payload); err != nil {
+		return fmt.Errorf("failed to forward prepare response: %w", err)
+	}
+
+	// If ERR packet, we are done
+	if protocol.IsERRPacket(respPkt.Payload) {
+		return nil
+	}
+
+	// Parse OK packet for num_params and num_columns
+	// Payload[0] is status (0x00)
+	// Payload[1:5] is stmt_id
+	// Payload[5:7] is num_columns
+	// Payload[7:9] is num_params
+	if len(respPkt.Payload) < 9 {
+		return nil
+	}
+
+	numColumns := binary.LittleEndian.Uint16(respPkt.Payload[5:7])
+	numParams := binary.LittleEndian.Uint16(respPkt.Payload[7:9])
+
+	// Read Parameter Definitions
+	if numParams > 0 {
+		for i := 0; i < int(numParams); i++ {
+			pkt, err := protocol.ReadPacket(s.backendConn.Conn())
+			if err != nil {
+				return fmt.Errorf("failed to read param packet: %w", err)
+			}
+			if err := protocol.WritePacket(s.clientConn, pkt.SequenceID, pkt.Payload); err != nil {
+				return fmt.Errorf("failed to forward param packet: %w", err)
+			}
+		}
+		// Read EOF
+		pkt, err := protocol.ReadPacket(s.backendConn.Conn())
+		if err != nil {
+			return fmt.Errorf("failed to read param EOF: %w", err)
+		}
+		if err := protocol.WritePacket(s.clientConn, pkt.SequenceID, pkt.Payload); err != nil {
+			return fmt.Errorf("failed to forward param EOF: %w", err)
+		}
+	}
+
+	// Read Column Definitions
+	if numColumns > 0 {
+		for i := 0; i < int(numColumns); i++ {
+			pkt, err := protocol.ReadPacket(s.backendConn.Conn())
+			if err != nil {
+				return fmt.Errorf("failed to read column packet: %w", err)
+			}
+			if err := protocol.WritePacket(s.clientConn, pkt.SequenceID, pkt.Payload); err != nil {
+				return fmt.Errorf("failed to forward column packet: %w", err)
+			}
+		}
+		// Read EOF
+		pkt, err := protocol.ReadPacket(s.backendConn.Conn())
+		if err != nil {
+			return fmt.Errorf("failed to read column EOF: %w", err)
+		}
+		if err := protocol.WritePacket(s.clientConn, pkt.SequenceID, pkt.Payload); err != nil {
+			return fmt.Errorf("failed to forward column EOF: %w", err)
+		}
+	}
+
+	return nil
+}
+
 // forwardCommand forwards a command to backend and proxies response
 func (s *Session) forwardCommand(cmdPkt *protocol.Packet) error {
 	// Set write deadline
@@ -264,6 +352,54 @@ func (s *Session) forwardCommand(cmdPkt *protocol.Packet) error {
 	}
 
 	// Proxy response back to client
+	// Read response from backend
+	respPkt, err := protocol.ReadPacket(s.backendConn.Conn())
+	if err != nil {
+		return fmt.Errorf("failed to read backend response: %w", err)
+	}
+
+	// Forward response to client
+	if err := protocol.WritePacket(s.clientConn, respPkt.SequenceID, respPkt.Payload); err != nil {
+		return fmt.Errorf("failed to forward response to client: %w", err)
+	}
+
+	// Check if it's OK or ERR
+	if protocol.IsOKPacket(respPkt.Payload) || protocol.IsERRPacket(respPkt.Payload) {
+		return nil
+	}
+
+	// It's likely a Result Set (column count packet)
+	// Read Column Definitions until EOF
+	for {
+		pkt, err := protocol.ReadPacket(s.backendConn.Conn())
+		if err != nil {
+			return fmt.Errorf("failed to read column packet: %w", err)
+		}
+		if err := protocol.WritePacket(s.clientConn, pkt.SequenceID, pkt.Payload); err != nil {
+			return fmt.Errorf("failed to forward column packet: %w", err)
+		}
+		if protocol.IsEOFPacket(pkt.Payload) {
+			break
+		}
+	}
+
+	// Read Rows until EOF
+	for {
+		pkt, err := protocol.ReadPacket(s.backendConn.Conn())
+		if err != nil {
+			return fmt.Errorf("failed to read row packet: %w", err)
+		}
+		if err := protocol.WritePacket(s.clientConn, pkt.SequenceID, pkt.Payload); err != nil {
+			return fmt.Errorf("failed to forward row packet: %w", err)
+		}
+		if protocol.IsEOFPacket(pkt.Payload) || protocol.IsERRPacket(pkt.Payload) {
+			break
+		}
+	}
+
+	return nil
+}
+
 func (s *Session) createDirectBackendConnection() (*BackendConn, error) {
 	backendDSN := net.JoinHostPort(s.config.Database.Host, fmt.Sprintf("%d", s.config.Database.Port))
 	backendConn, err := net.DialTimeout("tcp", backendDSN, s.config.Database.ConnectionTimeout)
@@ -282,9 +418,14 @@ func (s *Session) releaseBackendConnection() {
 	// Update last used timestamp
 	s.backendConn.UpdateLastUsed()
 
-	if s.backendPool != nil {
-		s.backendPool.Release(s.backendConn)
-	} else {
-		s.backendConn.Close()
-	}
+	// Always close backend connection for now since we can't reuse them
+	// without handling the handshake/auth replay logic.
+	s.backendConn.Close()
+	/*
+		if s.backendPool != nil {
+			s.backendPool.Release(s.backendConn)
+		} else {
+			s.backendConn.Close()
+		}
+	*/
 }

@@ -4,7 +4,7 @@ database:
   port: 3307
   type: mysql  # mysql or postgresql
   user: root
-  password: secret
+  password: ""
   database: ecommerce_db
   max_connections: 100
   idle_connections: 10

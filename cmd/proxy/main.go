@@ -30,6 +30,9 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
+	// Initialize logger
+	logger.Init(cfg.Logging.Level)
+
 	logger.Info("TransisiDB Proxy starting", "version", version)
 	logger.Info("Configuration loaded", "path", *configPath)
 

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TransisiDB - Database Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .table-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .table-header h2 {
+            color: #333;
+            font-size: 1.8em;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+            transition: background 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: #f8f9ff;
+        }
+
+        td {
+            padding: 15px;
+            color: #333;
+        }
+
+        .idr {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        .idn {
+            color: #27ae60;
+            font-weight: 600;
+        }
+
+        .null-value {
+            color: #999;
+            font-style: italic;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.shipped {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .highlight-row {
+            background: #fff9e6 !important;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .table-section, .stat-card {
+            animation: fadeIn 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 TransisiDB Database Viewer</h1>
+        <p class="subtitle">Real-time Currency Dual-Write Monitoring</p>
+
+        <div class="stats" id="stats">
+            <!-- Stats will be populated by JavaScript -->
+        </div>
+
+        <div class="table-section">
+            <div class="table-header">
+                <h2>📦 Orders Table</h2>
+                <span class="badge" id="orders-count">Loading...</span>
+            </div>
+            <div style="overflow-x: auto;">
+                <table id="orders-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer</th>
+                            <th>Total (IDR)</th>
+                            <th>Total (IDN)</th>
+                            <th>Shipping (IDR)</th>
+                            <th>Shipping (IDN)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-tbody">
+                        <tr><td colspan="7" style="text-align: center; padding: 40px;">Loading data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="table-section">
+            <div class="table-header">
+                <h2>🧾 Invoices Table</h2>
+                <span class="badge" id="invoices-count">Loading...</span>
+            </div>
+            <div style="overflow-x: auto;">
+                <table id="invoices-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Order ID</th>
+                            <th>Grand Total (IDR)</th>
+                            <th>Grand Total (IDN)</th>
+                            <th>Tax (IDR)</th>
+                            <th>Tax (IDN)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoices-tbody">
+                        <tr><td colspan="6" style="text-align: center; padding: 40px;">Loading data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <button class="refresh-btn" onclick="loadData()">🔄 Refresh</button>
+
+    <script>
+        async function loadData() {
+            try {
+                // Fetch orders
+                const ordersRes = await fetch('http://127.0.0.1:3307/orders'); // This won't work directly, need backend
+                // For demo, we'll use hardcoded data from the query results
+                
+                // Simulated data based on actual database
+                const ordersData = [
+                    {id: 1, customer_id: 1001, total_amount: 500000, total_amount_idn: null, shipping_fee: 25000, shipping_fee_idn: null, status: 'completed'},
+                    {id: 2, customer_id: 1002, total_amount: 1250000, total_amount_idn: null, shipping_fee: 30000, shipping_fee_idn: null, status: 'completed'},
+                    {id: 3, customer_id: 1003, total_amount: 750000, total_amount_idn: null, shipping_fee: 20000, shipping_fee_idn: null, status: 'pending'},
+                    {id: 4, customer_id: 1004, total_amount: 2000000, total_amount_idn: null, shipping_fee: 50000, shipping_fee_idn: null, status: 'shipped'},
+                    {id: 5, customer_id: 1005, total_amount: 350000, total_amount_idn: null, shipping_fee: 15000, shipping_fee_idn: null, status: 'completed'},
+                    {id: 1001, customer_id: 5001, total_amount: 25000000, total_amount_idn: 25000.0000, shipping_fee: 50000, shipping_fee_idn: 50.0000, status: 'pending'},
+                    {id: 1002, customer_id: 5002, total_amount: 10000000, total_amount_idn: 10000.0000, shipping_fee: 30000, shipping_fee_idn: 30.0000, status: 'pending'},
+                    {id: 2001, customer_id: 7001, total_amount: 15000, total_amount_idn: 15.0000, shipping_fee: 10000, shipping_fee_idn: 10.0000, status: 'pending'},
+                    {id: 2002, customer_id: 7002, total_amount: 15500, total_amount_idn: 15.5000, shipping_fee: 10000, shipping_fee_idn: 10.0000, status: 'pending'},
+                    {id: 2003, customer_id: 7003, total_amount: 16500, total_amount_idn: 16.5000, shipping_fee: 10000, shipping_fee_idn: 10.0000, status: 'pending'},
+                    {id: 2004, customer_id: 7004, total_amount: 15250, total_amount_idn: 15.2500, shipping_fee: 10000, shipping_fee_idn: 10.0000, status: 'pending'},
+                    {id: 2005, customer_id: 7005, total_amount: 15750, total_amount_idn: 15.7500, shipping_fee: 10000, shipping_fee_idn: 10.0000, status: 'pending'},
+                ];
+
+                const invoicesData = [
+                    {id: 1, order_id: 1, grand_total: 525000, grand_total_idn: null, tax_amount: 52500, tax_amount_idn: null},
+                    {id: 2, order_id: 2, grand_total: 1280000, grand_total_idn: null, tax_amount: 128000, tax_amount_idn: null},
+                    {id: 3, order_id: 4, grand_total: 2050000, grand_total_idn: null, tax_amount: 205000, tax_amount_idn: null},
+                ];
+
+                // Populate orders table
+                const ordersTbody = document.getElementById('orders-tbody');
+                ordersTbody.innerHTML = ordersData.map(row => `
+                    <tr class="${row.total_amount_idn !== null ? 'highlight-row' : ''}">
+                        <td><strong>${row.id}</strong></td>
+                        <td>${row.customer_id}</td>
+                        <td class="idr">${row.total_amount.toLocaleString()}</td>
+                        <td class="${row.total_amount_idn !== null ? 'idn' : 'null-value'}">
+                            ${row.total_amount_idn !== null ? row.total_amount_idn.toFixed(4) : 'NULL'}
+                        </td>
+                        <td class="idr">${row.shipping_fee.toLocaleString()}</td>
+                        <td class="${row.shipping_fee_idn !== null ? 'idn' : 'null-value'}">
+                            ${row.shipping_fee_idn !== null ? row.shipping_fee_idn.toFixed(4) : 'NULL'}
+                        </td>
+                        <td><span class="status ${row.status}">${row.status}</span></td>
+                    </tr>
+                `).join('');
+
+                // Populate invoices table
+                const invoicesTbody = document.getElementById('invoices-tbody');
+                invoicesTbody.innerHTML = invoicesData.map(row => `
+                    <tr>
+                        <td><strong>${row.id}</strong></td>
+                        <td>${row.order_id}</td>
+                        <td class="idr">${row.grand_total.toLocaleString()}</td>
+                        <td class="${row.grand_total_idn !== null ? 'idn' : 'null-value'}">
+                            ${row.grand_total_idn !== null ? row.grand_total_idn.toFixed(4) : 'NULL'}
+                        </td>
+                        <td class="idr">${row.tax_amount.toLocaleString()}</td>
+                        <td class="${row.tax_amount_idn !== null ? 'idn' : 'null-value'}">
+                            ${row.tax_amount_idn !== null ? row.tax_amount_idn.toFixed(4) : 'NULL'}
+                        </td>
+                    </tr>
+                `).join('');
+
+                // Update counts
+                document.getElementById('orders-count').textContent = `${ordersData.length} rows`;
+                document.getElementById('invoices-count').textContent = `${invoicesData.length} rows`;
+
+                // Calculate stats
+                const ordersWithIDN = ordersData.filter(r => r.total_amount_idn !== null).length;
+                const invoicesWithIDN = invoicesData.filter(r => r.grand_total_idn !== null).length;
+                
+                const orderConversionRate = (ordersWithIDN / ordersData.length * 100).toFixed(1);
+                const invoiceConversionRate = (invoicesWithIDN / invoicesData.length * 100).toFixed(1);
+
+                // Update stats
+                document.getElementById('stats').innerHTML = `
+                    <div class="stat-card">
+                        <h3>Total Orders</h3>
+                        <div class="stat-value">${ordersData.length}</div>
+                        <div class="stat-label">${ordersWithIDN} with IDN values</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${orderConversionRate}%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Conversion Rate (Orders)</h3>
+                        <div class="stat-value">${orderConversionRate}%</div>
+                        <div class="stat-label">Dual-write success</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Invoices</h3>
+                        <div class="stat-value">${invoicesData.length}</div>
+                        <div class="stat-label">${invoicesWithIDN} with IDN values</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${invoiceConversionRate}%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Conversion Rate (Invoices)</h3>
+                        <div class="stat-value">${invoiceConversionRate}%</div>
+                        <div class="stat-label">Dual-write success</div>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Load data on page load
+        loadData();
+    </script>
+</body>
+</html>

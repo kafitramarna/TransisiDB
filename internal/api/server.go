@@ -74,6 +74,46 @@ func (s *Server) setupRoutes() {
 		v1.PUT("/tables/:name", s.handleUpdateTable)
 		v1.DELETE("/tables/:name", s.handleDeleteTable)
 	}
+
+	// API v2 routes (v2.0 features)
+	v2 := s.router.Group("/api/v2")
+	v2.Use(s.authMiddleware())
+	v2.Use(s.metricsMiddleware())
+	v2.Use(s.loggingMiddleware())
+	{
+		// All v1 endpoints are also available in v2
+		v2.GET("/config", s.handleGetConfig)
+		v2.PUT("/config", s.handleUpdateConfig)
+		v2.POST("/config/reload", s.handleReloadConfig)
+
+		// v2.0: TLS/SSL status and configuration
+		v2.GET("/tls/status", s.handleTLSStatus)
+		v2.GET("/tls/certificates", s.handleTLSCertificates)
+
+		// v2.0: Read replica status and health
+		v2.GET("/replica/status", s.handleReplicaStatus)
+		v2.GET("/replica/health", s.handleReplicaHealth)
+
+		// v2.0: Currency detection configuration
+		v2.GET("/detection/config", s.handleDetectionConfig)
+		v2.PUT("/detection/config", s.handleUpdateDetectionConfig)
+
+		// v2.0: Enhanced metrics
+		v2.GET("/metrics/summary", s.handleMetricsSummary)
+
+		// Backfill endpoints (same as v1)
+		v2.POST("/backfill/start", s.handleBackfillStart)
+		v2.POST("/backfill/pause", s.handleBackfillPause)
+		v2.POST("/backfill/resume", s.handleBackfillResume)
+		v2.POST("/backfill/stop", s.handleBackfillStop)
+		v2.GET("/backfill/status", s.handleBackfillStatus)
+
+		// Table configuration (same as v1)
+		v2.GET("/tables", s.handleListTables)
+		v2.GET("/tables/:name", s.handleGetTable)
+		v2.PUT("/tables/:name", s.handleUpdateTable)
+		v2.DELETE("/tables/:name", s.handleDeleteTable)
+	}
 }
 
 // authMiddleware validates API key

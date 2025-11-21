@@ -4,31 +4,26 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strconv"
 
 	"github.com/kafitramarna/TransisiDB/internal/config"
 	"github.com/kafitramarna/TransisiDB/internal/parser"
-	"github.com/kafitramarna/TransisiDB/internal/rounding"
 )
 
-// Orchestrator manages dual-write operations
+// Orchestrator manages dual-write operations with bidirectional conversion (v2.0)
 type Orchestrator struct {
-	db             *sql.DB
-	parser         *parser.Parser
-	roundingEngine *rounding.Engine
-	config         *config.Config
+	db        *sql.DB
+	parser    *parser.Parser
+	converter *Converter // v2.0: Bidirectional converter
+	config    *config.Config
 }
 
 // NewOrchestrator creates a new dual-write orchestrator
 func NewOrchestrator(db *sql.DB, cfg *config.Config) *Orchestrator {
 	return &Orchestrator{
-		db:     db,
-		parser: parser.NewParser(cfg.Tables),
-		roundingEngine: rounding.NewEngine(
-			rounding.Strategy(cfg.Conversion.RoundingStrategy),
-			cfg.Conversion.Precision,
-		),
-		config: cfg,
+		db:        db,
+		parser:    parser.NewParser(cfg.Tables),
+		converter: NewConverter(cfg), // v2.0: Use new converter
+		config:    cfg,
 	}
 }
 
@@ -45,10 +40,21 @@ func (o *Orchestrator) InterceptAndRewrite(query string) (string, error) {
 		return query, nil
 	}
 
-	// Extract and convert values
-	convertedValues, err := o.convertCurrencyValues(pq)
+	// v2.0: Detect conversion direction
+	direction, err := o.converter.DetectDirection(pq)
+	if err != nil {
+		return "", fmt.Errorf("failed to detect conversion direction: %w", err)
+	}
+
+	// v2.0: Convert based on detected direction
+	convertedValues, err := o.converter.ConvertValues(pq, direction)
 	if err != nil {
 		return "", fmt.Errorf("failed to convert values: %w", err)
+	}
+
+	// Skip rewrite if no conversion needed
+	if direction == DirectionNone || convertedValues == nil {
+		return query, nil
 	}
 
 	// Rewrite query to include shadow columns
@@ -101,43 +107,6 @@ func (o *Orchestrator) QueryWithDualWrite(ctx context.Context, query string, arg
 	// For SELECT queries, we typically don't transform
 	// Transformation happens in response for simulation mode
 	return o.db.QueryContext(ctx, query, args...)
-}
-
-// convertCurrencyValues converts IDR values to IDN for all currency columns
-func (o *Orchestrator) convertCurrencyValues(pq *parser.ParsedQuery) (map[string]float64, error) {
-	converted := make(map[string]float64)
-
-	for _, colName := range pq.CurrencyColumns {
-		// Get the value from parsed query
-		value, exists := pq.Values[colName]
-		if !exists {
-			continue
-		}
-
-		// Convert to int64
-		var intValue int64
-		switch v := value.(type) {
-		case int64:
-			intValue = v
-		case int:
-			intValue = int64(v)
-		case string:
-			// Parse string to int
-			parsed, err := strconv.ParseInt(v, 10, 64)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse value for column %s: %w", colName, err)
-			}
-			intValue = parsed
-		default:
-			return nil, fmt.Errorf("unsupported value type for column %s: %T", colName, v)
-		}
-
-		// Convert using rounding engine
-		convertedValue := o.roundingEngine.ConvertIDRtoIDN(intValue, o.config.Conversion.Ratio)
-		converted[colName] = convertedValue
-	}
-
-	return converted, nil
 }
 
 // Stats tracks dual-write statistics

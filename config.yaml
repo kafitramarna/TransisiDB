@@ -39,6 +39,39 @@ conversion:
   precision: 4
   rounding_strategy: "BANKERS_ROUND"  # BANKERS_ROUND or ARITHMETIC_ROUND
 
+# Currency detection strategy (v2.0)
+# Determines how the proxy detects whether incoming values are IDR or IDN
+detection_strategy:
+  # Detection method: AUTO (recommended), EXPLICIT, FIELD_NAME, or VALUE_RANGE
+  method: "AUTO"
+  
+  # Field name to check for explicit currency specification (used when method=EXPLICIT or AUTO)
+  # Your queries should include this field with value "IDR" or "IDN"
+  # Example: INSERT INTO orders (total_amount, currency) VALUES (50000000, 'IDR')
+  explicit_field: "currency"
+  
+  # Value threshold for range-based detection (used when method=VALUE_RANGE or AUTO)
+  # Values below this threshold are considered IDN, above are considered IDR
+  # Default: 1000000 (1 million)
+  threshold_value: 1000000
+
+# Alternative detection strategies (for reference):
+#
+# Option 1: Explicit only (most reliable, requires app changes)
+# detection_strategy:
+#   method: "EXPLICIT"
+#   explicit_field: "currency"
+#
+# Option 2: Field name only (works if you use _idn suffix convention)
+# detection_strategy:
+#   method: "FIELD_NAME"
+#  
+# Option 3: Value range only (less reliable, use as last resort)
+# detection_strategy:
+#   method: "VALUE_RANGE"
+#   threshold_value: 1000000
+
+
 # Backfill worker configuration
 backfill:
   enabled: true

@@ -108,15 +108,15 @@ func TestInterceptAndRewrite_Insert(t *testing.T) {
 			// We'll test the rewrite logic without actual DB
 			// Create orchestrator with nil db (won't execute, just rewrite)
 			orch := &Orchestrator{
-				db:             nil, // nil for rewrite-only testing
-				parser:         nil, // will be set below
-				roundingEngine: nil, // will be set below
-				config:         cfg,
+				db:        nil, // nil for rewrite-only testing
+				parser:    nil, // will be set below
+				converter: nil, // will be set below
+				config:    cfg,
 			}
 
 			// Initialize components
 			orch.parser = NewOrchestrator(nil, cfg).parser
-			orch.roundingEngine = NewOrchestrator(nil, cfg).roundingEngine
+			orch.converter = NewOrchestrator(nil, cfg).converter
 
 			rewritten, err := orch.InterceptAndRewrite(tt.query)
 
@@ -141,13 +141,13 @@ func TestInterceptAndRewrite_Update(t *testing.T) {
 	cfg := getTestConfig()
 
 	orch := &Orchestrator{
-		db:             nil,
-		parser:         nil,
-		roundingEngine: nil,
-		config:         cfg,
+		db:        nil,
+		parser:    nil,
+		converter: nil,
+		config:    cfg,
 	}
 	orch.parser = NewOrchestrator(nil, cfg).parser
-	orch.roundingEngine = NewOrchestrator(nil, cfg).roundingEngine
+	orch.converter = NewOrchestrator(nil, cfg).converter
 
 	query := "UPDATE orders SET total_amount = 750000 WHERE id = 123"
 	rewritten, err := orch.InterceptAndRewrite(query)

@@ -10,16 +10,17 @@ import (
 
 // Config represents the application configuration
 type Config struct {
-	Database   DatabaseConfig   `yaml:"database"`
-	Proxy      ProxyConfig      `yaml:"proxy"`
-	Redis      RedisConfig      `yaml:"redis"`
-	API        APIConfig        `yaml:"api"`
-	Conversion ConversionConfig `yaml:"conversion"`
-	Backfill   BackfillConfig   `yaml:"backfill"`
-	Simulation SimulationConfig `yaml:"simulation"`
-	Monitoring MonitoringConfig `yaml:"monitoring"`
-	Logging    LoggingConfig    `yaml:"logging"`
-	Tables     TablesConfig     `yaml:"tables"`
+	Database          DatabaseConfig    `yaml:"database"`
+	Proxy             ProxyConfig       `yaml:"proxy"`
+	Redis             RedisConfig       `yaml:"redis"`
+	API               APIConfig         `yaml:"api"`
+	Conversion        ConversionConfig  `yaml:"conversion"`
+	DetectionStrategy DetectionStrategy `yaml:"detection_strategy"` // v2.0: Currency detection
+	Backfill          BackfillConfig    `yaml:"backfill"`
+	Simulation        SimulationConfig  `yaml:"simulation"`
+	Monitoring        MonitoringConfig  `yaml:"monitoring"`
+	Logging           LoggingConfig     `yaml:"logging"`
+	Tables            TablesConfig      `yaml:"tables"`
 }
 
 type DatabaseConfig struct {
@@ -63,6 +64,13 @@ type ConversionConfig struct {
 	RoundingStrategy string `yaml:"rounding_strategy"`
 }
 
+// DetectionStrategy configures currency detection (v2.0)
+type DetectionStrategy struct {
+	Method         string `yaml:"method"`          // AUTO, EXPLICIT, FIELD_NAME, VALUE_RANGE
+	ExplicitField  string `yaml:"explicit_field"`  // Field name for explicit detection
+	ThresholdValue int64  `yaml:"threshold_value"` // Value threshold for range detection
+}
+
 type BackfillConfig struct {
 	Enabled         bool `yaml:"enabled"`
 	BatchSize       int  `yaml:"batch_size"`
@@ -92,8 +100,8 @@ type LoggingConfig struct {
 type TablesConfig map[string]TableConfig
 
 type TableConfig struct {
-	Enabled bool                     `yaml:"enabled"`
-	Columns map[string]ColumnConfig  `yaml:"columns"`
+	Enabled bool                    `yaml:"enabled"`
+	Columns map[string]ColumnConfig `yaml:"columns"`
 }
 
 type ColumnConfig struct {
@@ -142,7 +150,7 @@ func (c *Config) Validate() error {
 	if c.Conversion.Precision < 0 || c.Conversion.Precision > 10 {
 		return fmt.Errorf("conversion precision must be between 0 and 10")
 	}
-	
+
 	// Validate rounding strategy
 	validStrategies := map[string]bool{
 		"BANKERS_ROUND":    true,
@@ -151,7 +159,7 @@ func (c *Config) Validate() error {
 	if !validStrategies[c.Conversion.RoundingStrategy] {
 		return fmt.Errorf("invalid rounding strategy: %s", c.Conversion.RoundingStrategy)
 	}
-	
+
 	return nil
 }
 

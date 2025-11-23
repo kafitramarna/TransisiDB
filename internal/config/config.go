@@ -189,6 +189,7 @@ func (c *Config) Validate() error {
 	validStrategies := map[string]bool{
 		"BANKERS_ROUND":    true,
 		"ARITHMETIC_ROUND": true,
+		"NO_ROUND":         true,
 	}
 	if !validStrategies[c.Conversion.RoundingStrategy] {
 		return fmt.Errorf("invalid rounding strategy: %s", c.Conversion.RoundingStrategy)

@@ -2,7 +2,7 @@
 database:
   host: localhost
   port: 3307
-  type: mysql  # mysql or postgresql
+  type: mysql # mysql or postgresql
   user: root
   password: ""
   database: ecommerce_db
@@ -35,21 +35,21 @@ api:
 
 # Currency conversion configuration
 conversion:
-  ratio: 1000  # IDR to IDN conversion ratio
+  ratio: 1000 # IDR to IDN conversion ratio
   precision: 4
-  rounding_strategy: "BANKERS_ROUND"  # BANKERS_ROUND or ARITHMETIC_ROUND
+  rounding_strategy: "BANKERS_ROUND" # BANKERS_ROUND, ARITHMETIC_ROUND, or NO_ROUND
 
 # Currency detection strategy (v2.0)
 # Determines how the proxy detects whether incoming values are IDR or IDN
 detection_strategy:
   # Detection method: AUTO (recommended), EXPLICIT, FIELD_NAME, or VALUE_RANGE
   method: "AUTO"
-  
+
   # Field name to check for explicit currency specification (used when method=EXPLICIT or AUTO)
   # Your queries should include this field with value "IDR" or "IDN"
   # Example: INSERT INTO orders (total_amount, currency) VALUES (50000000, 'IDR')
   explicit_field: "currency"
-  
+
   # Value threshold for range-based detection (used when method=VALUE_RANGE or AUTO)
   # Values below this threshold are considered IDN, above are considered IDR
   # Default: 1000000 (1 million)
@@ -65,32 +65,31 @@ detection_strategy:
 # Option 2: Field name only (works if you use _idn suffix convention)
 # detection_strategy:
 #   method: "FIELD_NAME"
-#  
+#
 # Option 3: Value range only (less reliable, use as last resort)
 # detection_strategy:
 #   method: "VALUE_RANGE"
 #   threshold_value: 1000000
-
 
 # TLS/SSL Configuration (v2.0)
 # Secure connections for production deployments
 tls:
   # Client-facing TLS (app → proxy)
   client:
-    enabled: false  # Set to true to enable TLS for client connections
+    enabled: false # Set to true to enable TLS for client connections
     cert_file: "/path/to/certs/server.crt"
     key_file: "/path/to/certs/server.key"
-    ca_file: "/path/to/certs/ca.crt"  # Optional: for mutual TLS (mTLS)
-    skip_verify: false  # Set to true only for development!
-  
+    ca_file: "/path/to/certs/ca.crt" # Optional: for mutual TLS (mTLS)
+    skip_verify: false # Set to true only for development!
+
   # Backend TLS (proxy → MySQL)
   backend:
-    enabled: false  # Set to true to enable TLS for MySQL connections
-    cert_file: "/path/to/certs/client.crt"  # Optional: for client cert auth
+    enabled: false # Set to true to enable TLS for MySQL connections
+    cert_file: "/path/to/certs/client.crt" # Optional: for client cert auth
     key_file: "/path/to/certs/client.key"
     ca_file: "/path/to/certs/mysql-ca.crt"
-    server_name: "mysql.example.com"  # Expected MySQL server name
-    skip_verify: false  # Set to true only for development!
+    server_name: "mysql.example.com" # Expected MySQL server name
+    skip_verify: false # Set to true only for development!
 
 # Production TLS Example (commented):
 #
@@ -105,12 +104,11 @@ tls:
 #     ca_file: "/etc/transisidb/tls/mysql-ca.crt"
 #     server_name: "mysql-prod.example.com"
 
-
 # Read Replica Routing (v2.0)
 # Distribute SELECT queries across read replicas for better performance
 replica:
-  enabled: false  # Set to true to enable replica routing
-  strategy: "ROUND_ROBIN"  # ROUND_ROBIN, RANDOM, or LEAST_CONNECTIONS
+  enabled: false # Set to true to enable replica routing
+  strategy: "ROUND_ROBIN" # ROUND_ROBIN, RANDOM, or LEAST_CONNECTIONS
   replicas:
     - host: replica1.example.com
       port: 3306
@@ -140,9 +138,6 @@ replica:
 #       password: "${REPLICA_PASSWORD}"
 #       database: production_db
 
-
-
-
 # Backfill worker configuration
 backfill:
   enabled: true
@@ -165,12 +160,12 @@ monitoring:
   prometheus_enabled: true
   prometheus_port: 9090
   metrics_path: "/metrics"
-  
+
 # Logging configuration
 logging:
-  level: "DEBUG"  # debug, info, warn, error
-  format: "json"  # json or text
-  output: "stdout"  # stdout or file path
+  level: "DEBUG" # debug, info, warn, error
+  format: "json" # json or text
+  output: "stdout" # stdout or file path
 
 # Table configuration (can also be loaded from Redis)
 tables:
@@ -191,7 +186,7 @@ tables:
         target_type: "DECIMAL(12,4)"
         rounding_strategy: "BANKERS_ROUND"
         precision: 4
-  
+
   invoices:
     enabled: true
     columns:

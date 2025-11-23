@@ -14,6 +14,7 @@ type Config struct {
 	Proxy             ProxyConfig       `yaml:"proxy"`
 	TLS               TLSConfig         `yaml:"tls"`     // v2.0: TLS/SSL configuration
 	Replica           ReplicaConfig     `yaml:"replica"` // v2.0: Read replica routing
+	Cache             CacheConfig       `yaml:"cache"`   // v2.1: Query result caching
 	Redis             RedisConfig       `yaml:"redis"`
 	API               APIConfig         `yaml:"api"`
 	Conversion        ConversionConfig  `yaml:"conversion"`
@@ -103,6 +104,24 @@ type ReplicaDatabaseConfig struct {
 	User     string `yaml:"user"`
 	Password string `yaml:"password"`
 	Database string `yaml:"database"`
+}
+
+// CacheConfig configures query result caching (v2.1)
+type CacheConfig struct {
+	Enabled        bool                        `yaml:"enabled"`         // Enable query caching
+	RedisAddr      string                      `yaml:"redis_addr"`      // Redis address
+	RedisPassword  string                      `yaml:"redis_password"`  // Redis password
+	RedisDB        int                         `yaml:"redis_db"`        // Redis database number
+	DefaultTTL     string                      `yaml:"default_ttl"`     // Default TTL (e.g., "60s", "5m")
+	MaxMemory      string                      `yaml:"max_memory"`      // Max memory (e.g., "1GB")
+	EvictionPolicy string                      `yaml:"eviction_policy"` // allkeys-lru, volatile-lru, etc.
+	TableConfigs   map[string]TableCacheConfig `yaml:"table_configs"`   // Per-table cache config
+}
+
+// TableCacheConfig holds per-table cache configuration
+type TableCacheConfig struct {
+	Enabled bool   `yaml:"enabled"` // Enable caching for this table
+	TTL     string `yaml:"ttl"`     // TTL for this table (e.g., "30s", "5m")
 }
 
 type BackfillConfig struct {

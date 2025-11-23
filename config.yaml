@@ -138,6 +138,49 @@ replica:
 #       password: "${REPLICA_PASSWORD}"
 #       database: production_db
 
+# Query Result Caching (v2.1)
+# Redis-based caching for SELECT query results
+cache:
+  enabled: false # Set to true to enable query caching
+  redis_addr: "localhost:6379"
+  redis_password: ""
+  redis_db: 1 # Separate DB from config storage
+  default_ttl: "60s" # Default cache TTL
+  max_memory: "512MB" # Max Redis memory for cache
+  eviction_policy: "allkeys-lru" # LRU eviction when memory full
+
+  # Per-table cache configuration
+  table_configs:
+    orders:
+      enabled: true
+      ttl: "30s" # Hot table, lower TTL
+    products:
+      enabled: true
+      ttl: "5m" # Cold table, higher TTL
+    # users:
+    #   enabled: false  # Disable caching for sensitive data
+
+# Production Cache Example (commented):
+#
+# cache:
+#   enabled: true
+#   redis_addr: "redis-cache.prod.internal:6379"
+#   redis_password: "${REDIS_CACHE_PASSWORD}"
+#   redis_db: 1
+#   default_ttl: "2m"
+#   max_memory: "2GB"
+#   eviction_policy: "allkeys-lru"
+#   table_configs:
+#     orders:
+#       enabled: true
+#       ttl: "1m"  # Frequent updates
+#     products:
+#       enabled: true
+#       ttl: "10m"  # Rarely changes
+#     analytics:
+#       enabled: true
+#       ttl: "1h"  # Heavy queries, cache longer
+
 # Backfill worker configuration
 backfill:
   enabled: true
